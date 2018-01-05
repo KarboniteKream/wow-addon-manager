@@ -70,9 +70,7 @@ def main():
 
 def get_addon_info(url):
     version, link = None, None
-
-    if not re.match(r'^https?://', url):
-        url = 'https://' + url
+    url = 'https://' + re.sub(r'^https?://', '', url)
 
     # WoWInterface.
     if re.search(r'wowinterface.com/downloads/info', url):
