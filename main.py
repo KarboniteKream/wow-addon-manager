@@ -90,7 +90,7 @@ def get_addon_info(url):
             link = find(html, '<a class="button button--download download-button mg-r-05" href="', '"')
             link = urljoin(response.geturl(), link + '/file')
 
-    # CurseForge.
+    # CurseForge projects.
     elif re.search(r'wow.curseforge.com/projects/[^/]*$', url):
         with urlopen(url + '/files?sort=releasetype') as response:
             html = str(response.read())
@@ -107,9 +107,16 @@ def get_addon_info(url):
     elif re.search(r'tukui.org/download.php\?ui=', url):
         with urlopen(url) as response:
             html = str(response.read())
-            version = find(html, '<b class="Premium">', '</b>')
+            version = find(html, r'id="version">.*?<b class="Premium">', '</b>')
             link = find(html, r'id="download".*?<div class="mb-10">.*?<a href="', '"')
             link = urljoin(response.geturl(), link)
+
+    # Tukui and ElvUI addons.
+    elif re.search(r'tukui.org/addons.php\?id=', url):
+        with urlopen(url) as response:
+            html = str(response.read())
+            version = find(html, r'id="extras">.*?<b class="VIP">', '</b>')
+            link = urljoin(response.geturl(), url.replace('id', 'download'))
 
     return version, link
 
