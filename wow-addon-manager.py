@@ -56,7 +56,12 @@ def main():
 
         installed_version = database[addon]['Version']
         files = database[addon]['Files'].split('\n')[1:]
-        missing_files = [f for f in files if not os.path.exists(os.path.join(addon_folder, f))]
+        missing_files = False
+
+        for file in files:
+            if not os.path.exists(os.path.join(addon_folder, file)):
+                missing_files = True
+                break
 
         if ignore_version != 'yes' and installed_version == version and not missing_files:
             tracked_files.extend(files)
