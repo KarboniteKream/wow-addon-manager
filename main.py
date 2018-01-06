@@ -49,7 +49,7 @@ def main():
 
         filename, _ = urlretrieve(link)
 
-        for file in reversed(database[addon]['Files'].split('\n')[1:]):
+        for file in reversed(database[addon]['Files'].strip().split('\n')):
             path = os.path.join(config['Settings']['WoWAddonPath'], file)
 
             if os.path.isdir(path):
