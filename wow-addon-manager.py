@@ -6,6 +6,7 @@ import os
 import re
 from urllib.parse import urljoin
 from urllib.request import urlopen, urlretrieve
+import sys
 import zipfile
 
 
@@ -33,7 +34,8 @@ def main():
         if addon in ['Settings', 'Example']:
             continue
 
-        print('[' + addon + '] ', end='', flush=True)
+        print('[' + addon + '] ', end='')
+        sys.stdout.flush()
 
         if 'URL' not in config[addon]:
             print('No URL specified.')
