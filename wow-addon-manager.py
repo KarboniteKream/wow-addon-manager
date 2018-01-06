@@ -58,7 +58,7 @@ def main():
             }
 
         installed_version = database[addon]['Version']
-        files = database[addon]['Files'].split('\n')[1:]
+        files = list(map(os.path.normpath, database[addon]['Files'].split('\n')[1:]))
         missing_files = False
 
         for file in files:
@@ -177,7 +177,7 @@ def cleanup(config, database, tracked_files):
 
     addon_folder = config['wow-addon-manager']['WoWAddonFolder']
     addon_folder = os.path.expanduser(os.path.normpath(addon_folder))
-    tracked_files = [os.path.normpath(os.path.join(addon_folder, file)) for file in tracked_files]
+    tracked_files = [os.path.join(addon_folder, file) for file in tracked_files]
 
     for root, folders, files in os.walk(addon_folder, topdown=False):
         for name in files:
