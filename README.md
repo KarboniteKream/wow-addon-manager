@@ -1,7 +1,7 @@
 # wow-addon-manager
 A simple addon manager for World of Warcraft, inspired by [wow-addon-updater](https://github.com/kuhnerdm/wow-addon-updater).
 
-:warning: **Warning:** This addon manager will delete all files in the `AddOns` folder that are not included in the addons, so please configure it before using.
+:warning: **Warning:** This addon manager will delete all files in the `AddOns` folder that are not part of the managed addons, so please configure it before using.
 
 ## Requirements
 - Python 3
