@@ -27,11 +27,11 @@ def main():
     if os.path.isfile('database.ini'):
         database.read('database.ini')
 
-    addon_folder = config['Settings']['WoWAddonFolder']
+    addon_folder = config['wow-addon-manager']['WoWAddonFolder']
     tracked_files = []
 
     for addon in config.sections():
-        if addon in ['Settings', 'Example']:
+        if addon in ['wow-addon-manager', 'Example']:
             continue
 
         print('[' + addon + '] ', end='')
@@ -171,7 +171,7 @@ def cleanup(config, database, tracked_files):
     with open('database.ini', 'w') as file:
         database.write(file)
 
-    addon_folder = config['Settings']['WoWAddonFolder']
+    addon_folder = config['wow-addon-manager']['WoWAddonFolder']
     tracked_files = [os.path.join(addon_folder, file) for file in tracked_files]
 
     for root, folders, files in os.walk(addon_folder, topdown=False):
