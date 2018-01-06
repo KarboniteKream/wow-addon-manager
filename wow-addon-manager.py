@@ -28,6 +28,7 @@ def main():
         database.read('database.ini')
 
     addon_folder = config['wow-addon-manager']['WoWAddonFolder']
+    addon_folder = os.path.expanduser(os.path.normpath(addon_folder))
     tracked_files = []
 
     for addon in config.sections():
@@ -75,7 +76,7 @@ def main():
 
             with zipfile.ZipFile(filename, 'r') as file:
                 file.extractall(addon_folder)
-                files = file.namelist()
+                files = list(map(os.path.normpath, file.namelist()))
                 tracked_files.extend(files)
 
                 database[addon]['Version'] = version
@@ -158,7 +159,7 @@ def find(string, left, right):
     match = re.search(left + '(.*?)' + right, string)
 
     if match is None:
-        return
+        return None
 
     # The text must not be empty.
     match = match.group(1).strip()
@@ -175,7 +176,8 @@ def cleanup(config, database, tracked_files):
         database.write(file)
 
     addon_folder = config['wow-addon-manager']['WoWAddonFolder']
-    tracked_files = [os.path.join(addon_folder, file) for file in tracked_files]
+    addon_folder = os.path.expanduser(os.path.normpath(addon_folder))
+    tracked_files = [os.path.normpath(os.path.join(addon_folder, file)) for file in tracked_files]
 
     for root, folders, files in os.walk(addon_folder, topdown=False):
         for name in files:
