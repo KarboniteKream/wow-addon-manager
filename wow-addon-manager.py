@@ -112,7 +112,7 @@ def get_addon_info(url):
 
     # CurseForge.
     elif re.search(r'(curseforge.com/wow/addons|mods.curse.com/addons/wow)/[^/]*$', url):
-        html, url = get(follow_redirect(url) + '/files')
+        html, url = get(get(url)[1] + '/files')
         version = find(html, '<span class="table__content file__name full">', '</span>')
         link = find(html, 'class="button button--download download-button mg-r-05" href="', '"')
         link = urllib.parse.urljoin(url, link + '/file')
@@ -138,13 +138,6 @@ def get_addon_info(url):
         link = urllib.parse.urljoin(url, url.replace('id', 'download'))
 
     return version, link
-
-
-def follow_redirect(url):
-    """Return the new URL."""
-    request = urllib.request.Request(url, headers={'User-Agent': 'wow-addon-manager'})
-    with urllib.request.urlopen(request) as response:
-        return response.geturl()
 
 
 def get(url):
