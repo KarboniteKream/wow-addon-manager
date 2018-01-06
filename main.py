@@ -18,11 +18,11 @@ def main():
     database = ConfigParser()
     database.optionxform = str
 
-    if os.path.isfile(config['wow-addon-manager']['Database']):
-        database.read(config['wow-addon-manager']['Database'])
+    if os.path.isfile(config['Settings']['Database']):
+        database.read(config['Settings']['Database'])
 
     for addon in config.sections():
-        if addon in ['wow-addon-manager', 'Example']:
+        if addon in ['Settings', 'Example']:
             continue
 
         print('[' + addon + '] ', end='', flush=True)
@@ -50,7 +50,7 @@ def main():
         filename, _ = urlretrieve(link)
 
         for file in reversed(database[addon]['Files'].split('\n')[1:]):
-            path = os.path.join(config['wow-addon-manager']['WoWAddonPath'], file)
+            path = os.path.join(config['Settings']['WoWAddonPath'], file)
 
             if os.path.isdir(path):
                 os.rmdir(path)
@@ -58,13 +58,13 @@ def main():
                 os.remove(path)
 
         with ZipFile(filename, 'r') as file:
-            file.extractall(config['wow-addon-manager']['WoWAddonPath'])
+            file.extractall(config['Settings']['WoWAddonPath'])
             database[addon]['Version'] = version
             database[addon]['Files'] = '\n' + '\n'.join(file.namelist())
 
         print('Installed version ' + version + '.')
 
-    with open(config['wow-addon-manager']['Database'], 'w') as file:
+    with open(config['Settings']['Database'], 'w') as file:
         database.write(file)
 
 
