@@ -1,3 +1,5 @@
+"""A simple addon manager for World of Warcraft."""
+
 from configparser import ConfigParser
 import os
 import re
@@ -7,11 +9,13 @@ from zipfile import ZipFile
 
 
 def main():
+    """Install or update all addons."""
     if not os.path.isfile('config.ini'):
         print('Error: The configuration file cannot be found.')
         return 1
 
     config = ConfigParser()
+    # Enable case sensitivity.
     config.optionxform = str
     config.read('config.ini')
 
@@ -28,13 +32,13 @@ def main():
         print('[' + addon + '] ', end='', flush=True)
 
         if 'URL' not in config[addon]:
-            print('Invalid configuration.')
+            print('No URL specified.')
             continue
 
         version, link = get_addon_info(config[addon]['URL'])
 
         if version is None or link is None:
-            print('Not found.')
+            print('The addon cannot be found.')
             continue
 
         if addon not in database:
@@ -43,12 +47,13 @@ def main():
                 'Files': '',
             }
 
-        if config[addon].get('IgnoreVersion', 'no') != 'yes' and database[addon]['Version'] == version:
+        if config[addon].get('IgnoreVersion') != 'yes' and database[addon]['Version'] == version:
             print('Already up-to-date.')
             continue
 
         filename, _ = urlretrieve(link)
 
+        # Remove existing files and folders.
         for file in reversed(database[addon]['Files'].strip().split('\n')):
             path = os.path.join(config['Settings']['WoWAddonPath'], file)
 
@@ -69,11 +74,14 @@ def main():
 
 
 def get_addon_info(url):
+    """Find the version information and download link from the addon page."""
     version, link = None, None
+
+    # Force HTTPS.
     url = 'https://' + re.sub(r'^https?://', '', url)
 
     # WoWInterface.
-    if re.search(r'wowinterface.com/downloads/info', url):
+    if re.search('wowinterface.com/downloads/info', url):
         with urlopen(url) as response:
             html = str(response.read())
             version = find(html, '<div id="version">Version: ', '</div>')
@@ -87,7 +95,7 @@ def get_addon_info(url):
         with urlopen(url + '/files') as response:
             html = str(response.read())
             version = find(html, '<span class="table__content file__name full">', '</span>')
-            link = find(html, '<a class="button button--download download-button mg-r-05" href="', '"')
+            link = find(html, 'class="button button--download download-button mg-r-05" href="', '"')
             link = urljoin(response.geturl(), link + '/file')
 
     # CurseForge projects.
@@ -122,11 +130,13 @@ def get_addon_info(url):
 
 
 def find(string, left, right):
+    """Return text between two strings. Supports regular expressions."""
     match = re.search(left + '(.*?)' + right, string)
 
     if match is None:
         return
 
+    # The text must not be empty.
     match = match.group(1).strip()
     return match if match else None
 
