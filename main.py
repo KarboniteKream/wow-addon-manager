@@ -5,7 +5,7 @@ import os
 import re
 from urllib.parse import urljoin
 from urllib.request import urlopen, urlretrieve
-from zipfile import ZipFile
+import zipfile
 
 
 def main():
@@ -22,8 +22,11 @@ def main():
     database = ConfigParser()
     database.optionxform = str
 
-    if os.path.isfile(config['Settings']['Database']):
-        database.read(config['Settings']['Database'])
+    if os.path.isfile('database.ini'):
+        database.read('database.ini')
+
+    addon_folder = config['Settings']['WoWAddonFolder']
+    tracked_files = []
 
     for addon in config.sections():
         if addon in ['Settings', 'Example']:
@@ -35,7 +38,10 @@ def main():
             print('No URL specified.')
             continue
 
-        version, link = get_addon_info(config[addon]['URL'])
+        url = config[addon]['URL']
+        ignore_version = config[addon].get('IgnoreVersion')
+
+        version, link = get_addon_info(url)
 
         if version is None or link is None:
             print('The addon cannot be found.')
@@ -47,30 +53,36 @@ def main():
                 'Files': '',
             }
 
-        if config[addon].get('IgnoreVersion') != 'yes' and database[addon]['Version'] == version:
+        installed_version = database[addon]['Version']
+        files = database[addon]['Files'].split('\n')[1:]
+
+        if ignore_version != 'yes' and installed_version == version:
+            tracked_files.extend(files)
             print('Already up-to-date.')
             continue
 
-        filename, _ = urlretrieve(link)
+        try:
+            filename, _ = urlretrieve(link)
 
-        # Remove existing files and folders.
-        for file in reversed(database[addon]['Files'].split('\n')[1:]):
-            path = os.path.join(config['Settings']['WoWAddonFolder'], file)
+            with zipfile.ZipFile(filename, 'r') as file:
+                file.extractall(addon_folder)
+                files = file.namelist()
+                tracked_files.extend(files)
 
-            if os.path.isdir(path):
-                os.rmdir(path)
-            elif os.path.isfile(path):
-                os.remove(path)
+                database[addon]['Version'] = version
+                database[addon]['Files'] = '\n' + '\n'.join(files)
 
-        with ZipFile(filename, 'r') as file:
-            file.extractall(config['Settings']['WoWAddonFolder'])
-            database[addon]['Version'] = version
-            database[addon]['Files'] = '\n' + '\n'.join(file.namelist())
+            print('Installed version ' + version + '.')
+        except zipfile.BadZipFile:
+            if re.search('wowinterface.com', url):
+                print('The latest version is awaiting approval.')
+            else:
+                print('The file cannot be found.')
 
-        print('Installed version ' + version + '.')
+        with open('database.ini', 'w') as file:
+            database.write(file)
 
-    with open(config['Settings']['Database'], 'w') as file:
-        database.write(file)
+    cleanup(config, database, tracked_files)
 
 
 def get_addon_info(url):
@@ -139,6 +151,34 @@ def find(string, left, right):
     # The text must not be empty.
     match = match.group(1).strip()
     return match if match else None
+
+
+def cleanup(config, database, tracked_files):
+    """Remove missing addons and untracked files."""
+    for addon in database.sections():
+        if addon not in config.sections():
+            database.remove_section(addon)
+
+    with open('database.ini', 'w') as file:
+        database.write(file)
+
+    addon_folder = config['Settings']['WoWAddonFolder']
+    tracked_files = [os.path.join(addon_folder, file) for file in tracked_files]
+
+    for root, folders, files in os.walk(addon_folder, topdown=False):
+        for name in files:
+            file = os.path.join(root, name)
+            if file not in tracked_files:
+                os.remove(file)
+
+        for name in folders:
+            folder = os.path.join(root, name) + '/'
+            # Try to remove empty folders that cannot be tracked.
+            if folder not in tracked_files:
+                try:
+                    os.rmdir(folder)
+                except OSError:
+                    pass
 
 
 if __name__ == '__main__':
