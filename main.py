@@ -54,7 +54,7 @@ def main():
         filename, _ = urlretrieve(link)
 
         # Remove existing files and folders.
-        for file in reversed(database[addon]['Files'].strip().split('\n')):
+        for file in reversed(database[addon]['Files'].split('\n')[1:]):
             path = os.path.join(config['Settings']['WoWAddonFolder'], file)
 
             if os.path.isdir(path):
