@@ -98,8 +98,8 @@ def get_addon_info(url):
             link = find(html, 'class="button button--download download-button mg-r-05" href="', '"')
             link = urljoin(response.geturl(), link + '/file')
 
-    # CurseForge projects.
-    elif re.search(r'wow.curseforge.com/projects/[^/]*$', url):
+    # CurseForge and WowAce.
+    elif re.search(r'(wow.curseforge|wowace).com/projects/[^/]*$', url):
         with urlopen(url + '/files?sort=releasetype') as response:
             html = str(response.read())
             version = find(html, r'<a class="overflow-tip twitch-link".*?data-name="', '"')
