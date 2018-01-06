@@ -55,7 +55,7 @@ def main():
 
         # Remove existing files and folders.
         for file in reversed(database[addon]['Files'].strip().split('\n')):
-            path = os.path.join(config['Settings']['WoWAddonPath'], file)
+            path = os.path.join(config['Settings']['WoWAddonFolder'], file)
 
             if os.path.isdir(path):
                 os.rmdir(path)
@@ -63,7 +63,7 @@ def main():
                 os.remove(path)
 
         with ZipFile(filename, 'r') as file:
-            file.extractall(config['Settings']['WoWAddonPath'])
+            file.extractall(config['Settings']['WoWAddonFolder'])
             database[addon]['Version'] = version
             database[addon]['Files'] = '\n' + '\n'.join(file.namelist())
 
