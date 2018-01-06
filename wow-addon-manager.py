@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """A simple addon manager for World of Warcraft."""
 
 from configparser import ConfigParser
