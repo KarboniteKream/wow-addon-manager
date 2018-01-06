@@ -55,8 +55,9 @@ def main():
 
         installed_version = database[addon]['Version']
         files = database[addon]['Files'].split('\n')[1:]
+        missing_files = [f for f in files if not os.path.exists(os.path.join(addon_folder, f))]
 
-        if ignore_version != 'yes' and installed_version == version:
+        if ignore_version != 'yes' and installed_version == version and not missing_files:
             tracked_files.extend(files)
             print('Already up-to-date.')
             continue
@@ -75,7 +76,7 @@ def main():
             print('Installed version ' + version + '.')
         except zipfile.BadZipFile:
             if re.search('wowinterface.com', url):
-                print('The latest version is awaiting approval.')
+                print('The latest version is currently awaiting approval.')
             else:
                 print('The file cannot be found.')
 
