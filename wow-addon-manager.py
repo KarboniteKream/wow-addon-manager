@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """A simple addon manager for World of Warcraft."""
 
-from configparser import ConfigParser
+import configparser
 import os
 import re
-from urllib.parse import urljoin
-from urllib.request import urlopen, urlretrieve
+import urllib.parse
+import urllib.request
 import sys
 import zipfile
 
@@ -16,12 +16,12 @@ def main():
         print('Error: The configuration file cannot be found.')
         return 1
 
-    config = ConfigParser()
+    config = configparser.ConfigParser()
     # Enable case sensitivity.
     config.optionxform = str
     config.read('config.ini')
 
-    database = ConfigParser()
+    database = configparser.ConfigParser()
     database.optionxform = str
 
     if os.path.isfile('database.ini'):
@@ -71,7 +71,7 @@ def main():
             continue
 
         try:
-            filename, _ = urlretrieve(link)
+            filename, _ = urllib.request.urlretrieve(link)
 
             with zipfile.ZipFile(filename, 'r') as file:
                 file.extractall(addon_folder)
@@ -103,51 +103,54 @@ def get_addon_info(url):
 
     # WoWInterface.
     if re.search('wowinterface.com/downloads/info', url):
-        with urlopen(url) as response:
-            html = str(response.read())
-            version = find(html, '<div id="version">Version: ', '</div>')
+        html, url = get(url)
+        version = find(html, '<div id="version">Version: ', '</div>')
 
-        with urlopen(url.replace('info', 'download')) as response:
-            html = str(response.read())
-            link = find(html, r'Problems with the download\? <a href="', '"')
+        html, url = get(url.replace('info', 'download'))
+        link = find(html, r'Problems with the download\? <a href="', '"')
 
     # CurseForge.
-    elif re.search(r'curseforge.com/wow/addons/[^/]*$', url):
-        with urlopen(url + '/files') as response:
-            html = str(response.read())
-            version = find(html, '<span class="table__content file__name full">', '</span>')
-            link = find(html, 'class="button button--download download-button mg-r-05" href="', '"')
-            link = urljoin(response.geturl(), link + '/file')
+    elif re.search(r'(curseforge.com/wow/addons|mods.curse.com/addons/wow)/[^/]*$', url):
+        html, url = get(follow_redirect(url) + '/files')
+        version = find(html, '<span class="table__content file__name full">', '</span>')
+        link = find(html, 'class="button button--download download-button mg-r-05" href="', '"')
+        link = urllib.parse.urljoin(url, link + '/file')
 
     # CurseForge and WowAce.
     elif re.search(r'(wow.curseforge|wowace).com/projects/[^/]*$', url):
-        with urlopen(url + '/files?sort=releasetype') as response:
-            html = str(response.read())
-            version = find(html, r'<a class="overflow-tip twitch-link".*?data-name="', '"')
-            link = find(html, '<a class="button tip fa-icon-download icon-only" href="', '"')
-            link = urljoin(response.geturl(), link)
-
-    # Curse.
-    elif re.search(r'mods.curse.com/addons/wow/[^/]*$', url):
-        url = url.replace('mods.curse.com/addons/wow', 'curseforge.com/wow/addons')
-        version, link = get_addon_info(url)
+        html, url = get(url + '/files?sort=releasetype')
+        version = find(html, r'<a class="overflow-tip twitch-link".*?data-name="', '"')
+        link = find(html, '<a class="button tip fa-icon-download icon-only" href="', '"')
+        link = urllib.parse.urljoin(url, link)
 
     # Tukui and ElvUI.
     elif re.search(r'tukui.org/download.php\?ui=', url):
-        with urlopen(url) as response:
-            html = str(response.read())
-            version = find(html, r'id="version">.*?<b class="Premium">', '</b>')
-            link = find(html, r'id="download".*?<div class="mb-10">.*?<a href="', '"')
-            link = urljoin(response.geturl(), link)
+        html, url = get(url)
+        version = find(html, r'id="version">.*?<b class="Premium">', '</b>')
+        link = find(html, r'id="download".*?<div class="mb-10">.*?<a href="', '"')
+        link = urllib.parse.urljoin(url, link)
 
     # Tukui and ElvUI addons.
     elif re.search(r'tukui.org/addons.php\?id=', url):
-        with urlopen(url) as response:
-            html = str(response.read())
-            version = find(html, r'id="extras">.*?<b class="VIP">', '</b>')
-            link = urljoin(response.geturl(), url.replace('id', 'download'))
+        html, url = get(url)
+        version = find(html, r'id="extras">.*?<b class="VIP">', '</b>')
+        link = urllib.parse.urljoin(url, url.replace('id', 'download'))
 
     return version, link
+
+
+def follow_redirect(url):
+    """Return the new URL."""
+    request = urllib.request.Request(url, headers={'User-Agent': 'wow-addon-manager'})
+    with urllib.request.urlopen(request) as response:
+        return response.geturl()
+
+
+def get(url):
+    """Perform a GET request."""
+    request = urllib.request.Request(url, headers={'User-Agent': 'wow-addon-manager'})
+    with urllib.request.urlopen(request) as response:
+        return str(response.read()), response.geturl()
 
 
 def find(string, left, right):
