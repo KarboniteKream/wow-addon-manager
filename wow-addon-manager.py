@@ -7,6 +7,7 @@ import re
 import urllib.parse
 import urllib.request
 import sys
+import tempfile
 import zipfile
 
 
@@ -30,6 +31,9 @@ def main():
     addon_folder = config['wow-addon-manager']['WoWAddonFolder']
     addon_folder = os.path.expanduser(os.path.normpath(addon_folder))
     tracked_files = []
+
+    if not os.path.exists(addon_folder):
+        os.makedirs(addon_folder)
 
     for addon in config.sections():
         if addon in ['wow-addon-manager', 'Example']:
@@ -72,9 +76,14 @@ def main():
             continue
 
         try:
-            filename, _ = urllib.request.urlretrieve(link)
+            request = urllib.request.Request(link, headers={'User-Agent': 'wow-addon-manager'})
+            temp_file = tempfile.NamedTemporaryFile(delete=False)
 
-            with zipfile.ZipFile(filename, 'r') as file:
+            with urllib.request.urlopen(request) as response:
+                temp_file.write(response.read())
+                temp_file.close()
+
+            with zipfile.ZipFile(temp_file.name, 'r') as file:
                 file.extractall(addon_folder)
                 files = list(map(os.path.normpath, file.namelist()))
                 tracked_files.extend(files)
